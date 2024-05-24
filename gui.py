@@ -1,14 +1,14 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, messagebox
+import tkinter.font as tkFont
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
 import asyncio
-from openAI_funcs import get_description, get_critique, get_more_info
+from openAI_funcs import get_description, get_critique, get_more_info, testing_func
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
-
 
 # Function to handle user input and generate response
 def send_message(event=None):
@@ -19,11 +19,17 @@ def send_message(event=None):
     if not image_uploaded:
         root.after(0, lambda: asyncio.run(upload_image()))
     else:
-        chat_history.insert('end', "You: " + user_input + "\n")
+        chat_right.insert('end', "You: " + user_input + "\n", "right")
+        # Insert fillers to get user's chatbox to the same height + 1
+        chat_left.insert('end', ("\n"*(len(user_input) // chars_per_line + 2)))
         entry.delete(0, 'end')
         response = generate_response(user_input)
-        chat_history.insert('end', "Bot: " + response + "\n")
-        chat_history.see('end')  # scroll to end of chat history
+        chat_left.insert('end', "Bot: " + response + "\n")
+        # Insert fillers to get user's chatbox to the same height + 1
+        chat_right.insert('end', ("\n"*(len(response) // chars_per_line + 2)))
+
+        chat_left.see('end')  # scroll to end of chat history
+        chat_right.see('end')
 
 
 # Function to generate response
@@ -67,46 +73,97 @@ async def upload_image():
         send_button.configure(text="Send")
 
         # Display loading messages while generating description and critique
-        chat_history.insert('end', "Bot: Processing the image...\n")
-        chat_history.see('end')
+        chat_left.insert('end', "Bot: Processing the image...\n")
+        chat_left.see('end')
         root.update_idletasks()
 
         # Get and display the image description and critique
         description = await get_description(file_path)
         critique = await get_critique(file_path)
+        combined_description = ("Bot: Here is the description of the uploaded image:\n" + description + "\n")
+        combined_critique = ("Bot: Here is the critique of the uploaded image:\n" + critique + "\n")
 
-        chat_history.insert('end', "Bot: Here is the description of the uploaded image:\n" + description + "\n")
-        chat_history.insert('end', "Bot: Here is the critique of the uploaded image:\n" + critique + "\n")
-        chat_history.see('end')
+        chat_left.insert('end', combined_description)
+        chat_left.insert('end', combined_critique)  
+        total_characters = len(combined_description) + len(combined_critique)
+        print (total_characters, chars_per_line, total_characters // chars_per_line)
+        chat_right.insert('end', ("\n"*(total_characters // chars_per_line + 6)))
+        chat_left.see('end')
+        chat_right.see('end')
 
+def on_scroll(*args):
+    chat_left.yview(*args)
+    chat_right.yview(*args)
 
 # Create main window
 root = ctk.CTk()
-root.geometry("1024x768")
+root.geometry("1024x568")
 root.title("Chatbot")
+ctk.set_appearance_mode("dark")
 
 # Create image display label
 image_label = ctk.CTkLabel(root, text="No Image Uploaded")
-image_label.grid(row=0, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
+image_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
+'''
 # Create chat history display
-chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', bg=root["bg"], fg="white",
+chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', font=("Helvetica", 12), bg="#242424", fg="white",
                                          highlightbackground="#999999", highlightthickness=1)
 chat_history.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 
+chat_history.grid_columnconfigure(0, weight=1)
+chat_history.grid_columnconfigure(1, weight=1)
+chat_history.tag_configure('left', justify='left')
+chat_history.tag_configure('right', justify='right', background="#282828")
+'''
+def _on_mouse_wheel(event):
+    scrollbar.event_generate("<MouseWheel>", delta=event.delta)
+
+# Create frame to hold two chat text widgets
+chat_frame = ctk.CTkFrame(root)
+# Position it next to image_label and makes sure it spreads right as much as possible
+chat_frame.grid(row=0, column=2, padx=5, pady=5, columnspan=2, sticky="nsew")
+
+# Left chat text widget that will hold chatbot's responses
+chat_left = ctk.CTkTextbox(chat_frame, wrap='word', bg_color="#1d1e1e", activate_scrollbars=False)
+chat_left.pack(side="left", fill="both", expand=True)
+
+# Right chat text widget that will hold user's responses
+chat_right = ctk.CTkTextbox(chat_frame, wrap='word', bg_color="#1d1e1e", activate_scrollbars=False)
+chat_right.pack(side="left", fill="both", expand=True)
+
+# Get width
+chat_width = chat_left.winfo_width()
+font = tkFont.Font(font=chat_left.cget("font"))
+char_width = font.measure('0')
+chars_per_line = chat_width // char_width
+
+# Create scrollbar linked to both text widgets
+scrollbar = ctk.CTkScrollbar(chat_frame, command=lambda *args: on_scroll(*args))
+scrollbar.pack(side="right", fill="y")
+# Configure it to scroll
+chat_left.configure(yscrollcommand=scrollbar.set)
+chat_right.configure(yscrollcommand=scrollbar.set)
+
+# Configure tags for left and right alignment
+chat_left.tag_config('left', justify='left')
+chat_right.tag_config('right', justify='left')
+
 # Create input field for user messages
 entry = ctk.CTkEntry(root)
-entry.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+entry.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
 entry.bind('<Return>', send_message)  # bind "Enter"
 
 # Create button to send message or upload image
 send_button = ctk.CTkButton(root, text="Upload Image", command=send_message, width=100)
-send_button.grid(row=1, column=2, padx=5, pady=5, sticky="nsew")
+send_button.grid(row=1, column=3, padx=5, pady=5, sticky="nsew")
 
 # Configure column and row weights to make sure widgets expand correctly
 root.grid_columnconfigure(0, weight=5)
-root.grid_columnconfigure(1, weight=4)
-root.grid_columnconfigure(2, weight=1)
+root.grid_columnconfigure(1, weight=5)
+root.grid_columnconfigure(2, weight=5)
+root.grid_columnconfigure(3, weight=1)
+
 root.grid_rowconfigure(0, weight=10)
 
 # Start the GUI main loop

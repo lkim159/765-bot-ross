@@ -5,7 +5,6 @@ import openai
 import asyncio
 import imgbbpy
 
-
 ###Async so remember to call it using "await"
 ###It is async because the image needs to be uploaded
 ###These should only be called once per uploaded image to save time
@@ -78,8 +77,10 @@ async def get_critique(image_path):
 
 def get_more_info(question):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
+
+    limit = str(len(question) * 20)
     
-    question = question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression!"
+    question = question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a question for me, the user"
 
     response = client.chat.completions.create(
       model="gpt-4-turbo",
@@ -102,7 +103,7 @@ def get_more_info(question):
 def bob_rossify(response):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
     
-    question = "Rephase this text:" + response + " If it is a question do not answer it. Rephrase this text by injecting a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression!"
+    question = "Rephase the following text to sound like Bob Ross without altering its word count by more than 1.5 times:" + response 
 
     response = client.chat.completions.create(
       model="gpt-4-turbo",
@@ -136,3 +137,5 @@ def make_art(description):
     des = response.data[0].url
     return des 
     
+def testing_func(test):
+    return "Hi"
