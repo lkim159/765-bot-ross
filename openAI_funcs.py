@@ -77,6 +77,7 @@ async def get_critique(image_path):
 ###Useful helper function to basically google things the bot doesn't know!
 
 def get_more_info(question):
+    print ("Called", )
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
     
     question = question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression!"
@@ -136,3 +137,5 @@ def make_art(description):
     des = response.data[0].url
     return des 
     
+def testing_func(user_input):
+  return f'Yes {user_input}'

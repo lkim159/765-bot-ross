@@ -18,7 +18,7 @@ def generate_response(user_input):
 # Create main window
 root = tk.Tk()
 root.geometry("500x500")
-root.title("Chatbot")
+root.title("Bot Ross")
 
 # Create chat history display
 chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap=tk.WORD)
