@@ -1,13 +1,45 @@
+import asyncio
+import os
+import threading
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, messagebox
-from PIL import Image, ImageTk
+
 import customtkinter as ctk
-import os
-import asyncio
-from openAI_funcs import get_description, get_critique, get_more_info, bob_rossify
+from PIL import Image, ImageTk
+
+from openAI_funcs import get_description, get_critique, get_more_info, upload_image_async
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
+
+
+# Function to process the message (get gpt response)
+def process_message(user_input):
+    response = generate_response(user_input)
+    chat_history.insert('end', "Bot Ross: " + response + "\n\n")
+    chat_history.see('end')  # scroll to end of chat history
+
+
+# Function to process the image (get description and critique)
+def process_image(file_path):
+    async def generate_initial_description_critique():
+        # Display loading messages while generating description and critique
+        chat_history.insert('end', "Bot Ross: Processing the image...\n")
+        chat_history.see('end')
+        root.update_idletasks()
+
+        # Upload the image and get the URL
+        image_url = await upload_image_async(file_path)
+
+        # Get and display the image description and critique
+        description = await get_description(image_url)
+        critique = await get_critique(image_url)
+
+        chat_history.insert('end', "Bot Ross: Here is the description of the uploaded image:\n" + description + "\n")
+        chat_history.insert('end', "Bot Ross: Here is the critique of the uploaded image:\n" + critique + "\n")
+        chat_history.see('end')
+
+    asyncio.run(generate_initial_description_critique())
 
 
 # Function to handle user input and generate response
@@ -17,13 +49,14 @@ def send_message(event=None):
     if not user_input and image_uploaded:
         return  # Do nothing if input is empty when image is uploaded
     if not image_uploaded:
-        root.after(0, lambda: asyncio.run(upload_image()))
+        open_image()
     else:
-        chat_history.insert('end', "You: " + user_input + "\n")
+        chat_history.insert('end', "You: " + user_input + "\n\n")
+        chat_history.see('end')
         entry.delete(0, 'end')
-        response = generate_response(user_input)
-        chat_history.insert('end', "Bot: " + response + "\n")
-        chat_history.see('end')  # scroll to end of chat history
+
+        # Start a new thread to process the image
+        threading.Thread(target=process_message, args=(user_input,)).start()
 
 
 # Function to generate response
@@ -39,8 +72,8 @@ def generate_response(user_input):
     return response
 
 
-# Function to upload and display an image
-async def upload_image():
+# Function to open and display an image
+def open_image():
     global image_uploaded
     file_path = filedialog.askopenfilename(filetypes=[
         ("PNG files", "*.png"),
@@ -58,6 +91,7 @@ async def upload_image():
             return
 
         img = Image.open(file_path)
+
         # Resize image to fit the display area while maintaining aspect ratio
         img.thumbnail((image_label.winfo_width(), image_label.winfo_height()))
         img_tk = ImageTk.PhotoImage(img)
@@ -66,18 +100,8 @@ async def upload_image():
         image_uploaded = True
         send_button.configure(text="Send")
 
-        # Display loading messages while generating description and critique
-        chat_history.insert('end', "Bot: Processing the image...\n")
-        chat_history.see('end')
-        root.update_idletasks()
-
-        # Get and display the image description and critique
-        description = await get_description(file_path)
-        critique = await get_critique(file_path)
-
-        chat_history.insert('end', "Bot: Here is the description of the uploaded image:\n" + description + "\n")
-        chat_history.insert('end', "Bot: Here is the critique of the uploaded image:\n" + critique + "\n")
-        chat_history.see('end')
+        # Start a new thread to process the image
+        threading.Thread(target=process_image, args=(file_path,)).start()
 
 
 # Create main window
