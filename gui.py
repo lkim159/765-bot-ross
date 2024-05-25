@@ -19,16 +19,17 @@ def send_message(event=None):
     if not image_uploaded:
         root.after(0, lambda: asyncio.run(upload_image()))
     else:
-        chat_right.insert('end', "You: " + user_input + "\n", "right")
-        # Insert fillers to get user's chatbox to the same height + 1
-        chat_left.insert('end', ("\n"*(len(user_input) // chars_per_line + 2)))
+        chat_right.insert('end', "You: " + user_input + "\n", "default")
+        # Fill other chat box with same text as padding but make it hidden
+        chat_left.insert('end', "You: " + user_input + "\n", "hidden")
         entry.delete(0, 'end')
         response = generate_response(user_input)
-        chat_left.insert('end', "Bot: " + response + "\n")
-        # Insert fillers to get user's chatbox to the same height + 1
-        chat_right.insert('end', ("\n"*(len(response) // chars_per_line + 2)))
 
-        chat_left.see('end')  # scroll to end of chat history
+        chat_left.insert('end', "Bot: " + response + "\n", "default")
+        chat_right.insert('end', "Bot: " + response + "\n", "hidden")
+
+        # Scroll to end of chat
+        chat_left.see('end') 
         chat_right.see('end')
 
 
@@ -73,8 +74,11 @@ async def upload_image():
         send_button.configure(text="Send")
 
         # Display loading messages while generating description and critique
-        chat_left.insert('end', "Bot: Processing the image...\n")
+        chat_left.insert('end', "Bot: Processing the image...\n", "default")
         chat_left.see('end')
+        # Padding on the other chatbox but hidden to align the next message
+        chat_right.insert('end', "Bot: Processing the image...\n", "hidden")
+        chat_right.see('end')
         root.update_idletasks()
 
         # Get and display the image description and critique
@@ -83,17 +87,23 @@ async def upload_image():
         combined_description = ("Bot: Here is the description of the uploaded image:\n" + description + "\n")
         combined_critique = ("Bot: Here is the critique of the uploaded image:\n" + critique + "\n")
 
-        chat_left.insert('end', combined_description)
-        chat_left.insert('end', combined_critique)  
-        total_characters = len(combined_description) + len(combined_critique)
-        print (total_characters, chars_per_line, total_characters // chars_per_line)
-        chat_right.insert('end', ("\n"*(total_characters // chars_per_line + 6)))
+        chat_left.insert('end', combined_description, "default")
+        chat_left.insert('end', combined_critique, "default")  
+        chat_right.insert('end', combined_description, "hidden")
+        chat_right.insert('end', combined_critique, "hidden")
+
         chat_left.see('end')
         chat_right.see('end')
 
+# Link scrolling chat_left and chat_right with scrollbar
 def on_scroll(*args):
     chat_left.yview(*args)
     chat_right.yview(*args)
+
+def insert_hidden_text(textbox, text):
+    textbox.configure(text_color="#1d1e1e")
+    textbox.insert('end', text)
+    textbox.configure(text_color="white")
 
 # Create main window
 root = ctk.CTk()
@@ -102,22 +112,8 @@ root.title("Chatbot")
 ctk.set_appearance_mode("dark")
 
 # Create image display label
-image_label = ctk.CTkLabel(root, text="No Image Uploaded")
+image_label = ctk.CTkLabel(root, text="No Image Uploaded\nPlease Upload an Image to Start")
 image_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
-
-'''
-# Create chat history display
-chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', font=("Helvetica", 12), bg="#242424", fg="white",
-                                         highlightbackground="#999999", highlightthickness=1)
-chat_history.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
-
-chat_history.grid_columnconfigure(0, weight=1)
-chat_history.grid_columnconfigure(1, weight=1)
-chat_history.tag_configure('left', justify='left')
-chat_history.tag_configure('right', justify='right', background="#282828")
-'''
-def _on_mouse_wheel(event):
-    scrollbar.event_generate("<MouseWheel>", delta=event.delta)
 
 # Create frame to hold two chat text widgets
 chat_frame = ctk.CTkFrame(root)
@@ -132,11 +128,27 @@ chat_left.pack(side="left", fill="both", expand=True)
 chat_right = ctk.CTkTextbox(chat_frame, wrap='word', bg_color="#1d1e1e", activate_scrollbars=False)
 chat_right.pack(side="left", fill="both", expand=True)
 
-# Get width
-chat_width = chat_left.winfo_width()
-font = tkFont.Font(font=chat_left.cget("font"))
-char_width = font.measure('0')
-chars_per_line = chat_width // char_width
+# Tags to hide colour of text
+chat_left.tag_config('hidden', foreground="#1d1e1e")
+chat_left.tag_config('default', foreground="white")
+chat_right.tag_config('hidden', foreground="#1d1e1e")
+chat_right.tag_config('default', foreground="white")
+
+
+# Function to handle mouse wheel scrolling
+def handle_mousewheel(event):
+    # Delta value 120 as each unit for mouse wheel scrolls
+    if event.delta > 0:
+        chat_left.yview_scroll(-1, "unit")
+        chat_right.yview_scroll(-1, "unit")
+    else:
+        chat_left.yview_scroll(1, "unit")
+        chat_right.yview_scroll(1, "unit")
+    return "break"
+
+# Bind scrolling together
+chat_left.bind("<MouseWheel>", handle_mousewheel)
+chat_right.bind("<MouseWheel>", handle_mousewheel)
 
 # Create scrollbar linked to both text widgets
 scrollbar = ctk.CTkScrollbar(chat_frame, command=lambda *args: on_scroll(*args))
@@ -152,7 +164,8 @@ chat_right.tag_config('right', justify='left')
 # Create input field for user messages
 entry = ctk.CTkEntry(root)
 entry.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
-entry.bind('<Return>', send_message)  # bind "Enter"
+# Bind 'enter' to send
+entry.bind('<Return>', send_message)
 
 # Create button to send message or upload image
 send_button = ctk.CTkButton(root, text="Upload Image", command=send_message, width=100)
