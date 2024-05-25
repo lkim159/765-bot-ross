@@ -1,40 +1,140 @@
+import asyncio
+import os
+import threading
 import tkinter as tk
-from tkinter import scrolledtext
-import openAI_funcs as gpt
+from tkinter import filedialog, scrolledtext, messagebox
+
+import customtkinter as ctk
+from PIL import Image, ImageTk
+
+from openAI_funcs import get_description, get_critique, get_more_info, upload_image_async
+
+# Variable to keep track of whether an image has been uploaded
+image_uploaded = False
+
+
+# Function to process the message (get gpt response)
+def process_message(user_input):
+    response = generate_response(user_input)
+    chat_history.insert('end', "Bot Ross: " + response + "\n\n")
+    chat_history.see('end')  # scroll to end of chat history
+
+
+# Function to process the image (get description and critique)
+def process_image(file_path):
+    async def generate_initial_description_critique():
+        # Display loading messages while generating description and critique
+        chat_history.insert('end', "Bot Ross: Processing the image...\n")
+        chat_history.see('end')
+        root.update_idletasks()
+
+        # Upload the image and get the URL
+        image_url = await upload_image_async(file_path)
+
+        # Get and display the image description and critique
+        description = await get_description(image_url)
+        critique = await get_critique(image_url)
+
+        chat_history.insert('end', "Bot Ross: Here is the description of the uploaded image:\n" + description + "\n")
+        chat_history.insert('end', "Bot Ross: Here is the critique of the uploaded image:\n" + critique + "\n")
+        chat_history.see('end')
+
+    asyncio.run(generate_initial_description_critique())
+
 
 # Function to handle user input and generate response
-def send_message():
-    user_input = entry.get()
-    chat_history.insert(tk.END, "You: " + user_input + "\n")
-    entry.delete(0, tk.END)
-    response = generate_response(user_input)
-    chat_history.insert(tk.END, "Bot Ross: " + response + "\n")
-    chat_history.see(tk.END)  # Scroll to the bottom of the chat history
+def send_message(event=None):
+    global image_uploaded
+    user_input = entry.get().strip()
+    if not user_input and image_uploaded:
+        return  # Do nothing if input is empty when image is uploaded
+    if not image_uploaded:
+        open_image()
+    else:
+        chat_history.insert('end', "You: " + user_input + "\n\n")
+        chat_history.see('end')
+        entry.delete(0, 'end')
 
-# Function to generate response (replace this with your chatbot logic)
+        # Start a new thread to process the image
+        threading.Thread(target=process_message, args=(user_input,)).start()
+
+
+# Function to generate response
 def generate_response(user_input):
-    # This is just a placeholder response
-    answer = gpt.get_more_info(user_input)
-    return answer
+    global image_uploaded
+    if image_uploaded:
+        # If an image is uploaded, use get_more_info function to generate response
+        response = get_more_info(user_input)
+    else:
+        # If no image is uploaded, provide a simple default response
+        response = "Hi, please upload an image to start!"
+
+    return response
+
+
+# Function to open and display an image
+def open_image():
+    global image_uploaded
+    file_path = filedialog.askopenfilename(filetypes=[
+        ("PNG files", "*.png"),
+        ("JPEG files", "*.jpeg"),
+        ("JPG files", "*.jpg"),
+        ("WEBP files", "*.webp"),
+        ("GIF files", "*.gif")
+    ])
+
+    if file_path:
+        file_size = os.path.getsize(file_path)
+        if file_size > 20 * 1024 * 1024:  # 20 MB in bytes
+            messagebox.showerror("File Size Error",
+                                 "The selected image is larger than 20MB. Please choose a smaller file.")
+            return
+
+        img = Image.open(file_path)
+
+        # Resize image to fit the display area while maintaining aspect ratio
+        img.thumbnail((image_label.winfo_width(), image_label.winfo_height()))
+        img_tk = ImageTk.PhotoImage(img)
+        image_label.configure(image=img_tk, text="")
+        image_label.image = img_tk  # Keep a reference to avoid garbage collection
+        image_uploaded = True
+        send_button.configure(text="Send")
+
+        # Start a new thread to process the image
+        threading.Thread(target=process_image, args=(file_path,)).start()
+
 
 # Create main window
-root = tk.Tk()
-root.geometry("500x500")
-root.title("Bot Ross")
+root = ctk.CTk()
+root.geometry("1024x768")
+root.title("Chatbot")
+
+# Create image display label
+image_label = ctk.CTkLabel(root, text="No Image Uploaded")
+image_label.grid(row=0, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
 
 # Create chat history display
-chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap=tk.WORD)
-chat_history.grid(row=0, column=0, columnspan=2, padx=5, pady=5)
-opener = gpt.bob_rossify("Welcome! My name is Bot Ross and I'm here to help with your art. How are you feeling today?")
+opener = "Welcome! My name is Bot Ross and I'm here to help with your art. How are you feeling today?"
+
+chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', bg=root["bg"], fg="white",
+                                         highlightbackground="#999999", highlightthickness=1)
+chat_history.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
 chat_history.insert(tk.END, "Bot Ross: " + opener + "\n")
 
 # Create input field for user messages
-entry = tk.Entry(root, width=40)
-entry.grid(row=1, column=0, padx=5, pady=5)
+entry = ctk.CTkEntry(root)
+entry.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+entry.bind('<Return>', send_message)  # bind "Enter"
 
-# Create button to send message
-send_button = tk.Button(root, text="Send", command=send_message)
-send_button.grid(row=1, column=1, padx=5, pady=5)
+# Create button to send message or upload image
+send_button = ctk.CTkButton(root, text="Upload Image", command=send_message, width=100)
+send_button.grid(row=1, column=2, padx=5, pady=5, sticky="nsew")
+
+# Configure column and row weights to make sure widgets expand correctly
+root.grid_columnconfigure(0, weight=5)
+root.grid_columnconfigure(1, weight=4)
+root.grid_columnconfigure(2, weight=1)
+root.grid_rowconfigure(0, weight=10)
 
 # Start the GUI main loop
 root.mainloop()
