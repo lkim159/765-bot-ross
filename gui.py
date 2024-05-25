@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import customtkinter as ctk
 import os
 import asyncio
-from openAI_funcs import get_description, get_critique, get_more_info
+from openAI_funcs import get_description, get_critique, get_more_info, bob_rossify
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
@@ -90,9 +90,12 @@ image_label = ctk.CTkLabel(root, text="No Image Uploaded")
 image_label.grid(row=0, column=0, columnspan=1, padx=5, pady=5, sticky="nsew")
 
 # Create chat history display
+opener = "Welcome! My name is Bot Ross and I'm here to help with your art. How are you feeling today?"
+
 chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', bg=root["bg"], fg="white",
                                          highlightbackground="#999999", highlightthickness=1)
 chat_history.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+chat_history.insert(tk.END, "Bot Ross: " + opener + "\n")
 
 # Create input field for user messages
 entry = ctk.CTkEntry(root)
