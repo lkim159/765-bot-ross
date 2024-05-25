@@ -16,22 +16,34 @@ image_uploaded = False
 # Function to process the message (get gpt response)
 def process_message(user_input):
     response = generate_response(user_input)
+<<<<<<< HEAD
     chat_left.insert('end', "Bot Ross: " + response + "\n", "default")
     chat_right.insert('end', "Bot Ross: " + response + "\n", "hidden")
 
     # Scroll to end of chat
     chat_left.see('end') 
     chat_right.see('end')
+=======
+    chat_history.insert('end', "Bot Ross: " + response + "\n\n")
+    chat_history.see('end')  # scroll to end of chat history
+
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
 
 # Function to process the image (get description and critique)
 def process_image(file_path):
     async def generate_initial_description_critique():
         # Display loading messages while generating description and critique
+<<<<<<< HEAD
         chat_left.insert('end', "Bot Ross: Processing the image...\n", "default")
         chat_left.see('end')
         # Padding on the other chatbox but hidden to align the next message
         chat_right.insert('end', "Bot Ross: Processing the image...\n", "hidden")
         chat_right.see('end')
+=======
+        chat_history.insert('end', "Bot Ross: Processing the image...\n")
+        chat_history.see('end')
+        root.update_idletasks()
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
 
         # Upload the image and get the URL
         image_url = await upload_image_async(file_path)
@@ -40,6 +52,7 @@ def process_image(file_path):
         description = await get_description(image_url)
         critique = await get_critique(image_url)
 
+<<<<<<< HEAD
         completed_description = ("Bot Ross: Here is the description of the uploaded image:\n" + description + "\n")
         completed_critique = ("Bot Ross: Here is the critique of the uploaded image:\n" + critique + "\n")
 
@@ -50,6 +63,11 @@ def process_image(file_path):
 
         chat_left.see('end')
         chat_right.see('end')
+=======
+        chat_history.insert('end', "Bot Ross: Here is the description of the uploaded image:\n" + description + "\n")
+        chat_history.insert('end', "Bot Ross: Here is the critique of the uploaded image:\n" + critique + "\n")
+        chat_history.see('end')
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
 
     asyncio.run(generate_initial_description_critique())
 
@@ -63,12 +81,17 @@ def send_message(event=None):
     if not image_uploaded:
         open_image()
     else:
+<<<<<<< HEAD
         chat_right.insert('end', "You: " + user_input + "\n", "default")
         # Fill other chat box with same text as padding but make it hidden
         chat_left.insert('end', "You: " + user_input + "\n", "hidden")
         # Scroll to end of chat
         chat_left.see('end') 
         chat_right.see('end')
+=======
+        chat_history.insert('end', "You: " + user_input + "\n\n")
+        chat_history.see('end')
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
         entry.delete(0, 'end')
 
         # Start a new thread to process the image
@@ -107,6 +130,7 @@ def open_image():
             return
 
         img = Image.open(file_path)
+
         # Resize image to fit the display area while maintaining aspect ratio
         img.thumbnail((image_label.winfo_width(), image_label.winfo_height()))
         img_tk = ImageTk.PhotoImage(img)
@@ -118,10 +142,13 @@ def open_image():
         # Start a new thread to process the image
         threading.Thread(target=process_image, args=(file_path,)).start()
 
+<<<<<<< HEAD
 # Link scrolling chat_left and chat_right with scrollbar
 def on_scroll(*args):
     chat_left.yview(*args)
     chat_right.yview(*args)
+=======
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
 
 # Create main window
 root = ctk.CTk()
@@ -136,6 +163,7 @@ image_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 # Create chat history display
 opener = "Welcome! My name is Bot Ross and I'm here to help with your art. How are you feeling today?"
 
+<<<<<<< HEAD
 # Create frame to hold two chat text widgets
 chat_frame = ctk.CTkFrame(root)
 # Position it next to image_label and makes sure it spreads right as much as possible
@@ -181,6 +209,12 @@ chat_right.configure(yscrollcommand=scrollbar.set)
 # Configure tags for left and right alignment
 chat_left.tag_config('left', justify='left')
 chat_right.tag_config('right', justify='left')
+=======
+chat_history = scrolledtext.ScrolledText(root, width=50, height=20, wrap='word', bg=root["bg"], fg="white",
+                                         highlightbackground="#999999", highlightthickness=1)
+chat_history.grid(row=0, column=1, columnspan=2, padx=5, pady=5, sticky="nsew")
+chat_history.insert(tk.END, "Bot Ross: " + opener + "\n")
+>>>>>>> 8b681cb6cfd11088b2d93530cc8ee0fb9690e99d
 
 # Create input field for user messages
 entry = ctk.CTkEntry(root)
