@@ -7,11 +7,16 @@ from tkinter import filedialog, scrolledtext, messagebox
 import customtkinter as ctk
 from PIL import Image, ImageTk
 
-from openAI_funcs import get_description, get_critique, get_more_info, upload_image_async
+from openAI_funcs import get_description, get_critique, get_more_info, upload_image_async, summarise_responses
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
 
+# Count of the number of user responses
+user_response_count = 0
+summarised_history = ""
+# The 3 latest responses
+user_responses = ""
 
 # Function to process the message (get gpt response)
 def process_message(user_input):
@@ -53,10 +58,27 @@ def process_image(file_path):
 
     asyncio.run(generate_initial_description_critique())
 
+# Update counts and previous user responses to be summarised
+def update_user_response(user_input):
+    global summarised_history
+    global user_responses
+    global user_response_count
+    # Increase count since user responded and include it into our variable
+    user_response_count += 1
+    user_responses += (f"{user_response_count}. {user_input}")
+    if (user_response_count == 3):
+        # Summarise them and reset
+        summarised_history = summarise_responses(summarised_history, user_responses)
+        user_response_count = 0
+        user_responses = ""
+
+        print (summarised_history)
 
 # Function to handle user input and generate response
 def send_message(event=None):
+    # Allow variables to be changed within function as it is out of scope
     global image_uploaded
+    
     user_input = entry.get().strip()
     if not user_input and image_uploaded:
         return  # Do nothing if input is empty when image is uploaded
@@ -72,6 +94,10 @@ def send_message(event=None):
         entry.delete(0, 'end')
 
         # Start a new thread to process the image
+        threading.Thread(target=update_user_response, args=(user_input,)).start()
+
+
+        # Start a new thread to process the image
         threading.Thread(target=process_message, args=(user_input,)).start()
 
 
@@ -80,7 +106,7 @@ def generate_response(user_input):
     global image_uploaded
     if image_uploaded:
         # If an image is uploaded, use get_more_info function to generate response
-        response = get_more_info(user_input)
+        response = get_more_info(user_input, summarised_history)
     else:
         # If no image is uploaded, provide a simple default response
         response = "Hi, please upload an image to start!"

@@ -4,7 +4,6 @@ import sentiment_analysis
 
 from openai import OpenAI
 
-
 # Function to upload image using asynchronous client
 async def upload_image_async(image_path):
     img_client = imgbbpy.AsyncClient("d65d28466ce3379f85bf22305662cb0c")
@@ -83,9 +82,40 @@ async def get_critique(image_url):
     des = response.choices[0].message.content
     return des
 
+# Summarise the user's responses to be used as context for encouraging the user
+def summarise_responses(summarised_responses, responses):
+    question = f"""
+    Combine and summarise the following text to within 300 words. The following text are the user's responses from a conversation. 
+    This text: {summarised_responses} \n includes the previously summarised user responses. This text: {responses} \n includes the 
+    latest 3 user responses that have yet to be summarised. I want these 3 latest user responses to be summarised along with the 
+    previously summarised user responses such that it can be used as a summary of the user's responses. This summary will be used 
+    as context for my responses to the user where if I wanted to encourage the user, I would want to be able to use this summary of
+    what the user has talked about to cheer the user up.
+    """
+       
+    client = OpenAI(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                ],
+            }
+        ],
+        max_tokens=1000,
+    )
+    summary = response.choices[0].message.content
+    return summary
+
+
 
 # Useful helper function to basically google things the bot doesn't know!
-def get_more_info(question):
+def get_more_info(question, summarised_history):
     client = OpenAI(
         api_key=os.environ.get("OPENAI_API_KEY"),
     )
@@ -109,8 +139,11 @@ def get_more_info(question):
         + neu
         + " and a positive sentiment of "
         + pos
-        + ". Based on this mix of scores, interpret my mood and respond in a way to cheer me up if you feel my overall mood is generally negative. End your response with a question for me, the user"
+        + ". Based on this mix of scores, interpret my mood and respond in a way to cheer me up if you feel my overall mood is generally negative."
     )
+    # Add context
+    if (summarised_history != ""):
+        question += "I have also provided a summary of the previous responses from the user:" + summarised_history + "\nYou could perhaps use it as context to motivate and cheer me up if my overall mood is generally negative. End your response with a question for me, the user"
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
@@ -177,3 +210,4 @@ def make_art(description):
 
     des = response.data[0].url
     return des
+
