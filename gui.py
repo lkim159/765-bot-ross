@@ -15,7 +15,11 @@ image_uploaded = False
 
 # Function to process the message (get gpt response)
 def process_message(user_input):
+    # Insert temporary "Typing" to let user know that Bot Ross is coming up with an response
+    chat_left.insert('end', "Typing...\n")
     response = generate_response(user_input)
+    # Remove it after response has been generated
+    chat_left.delete("end-2l", "end-1l")
     chat_left.insert('end', "Bot Ross: " + response + "\n", "default")
     chat_right.insert('end', "Bot Ross: " + response + "\n", "hidden")
 
