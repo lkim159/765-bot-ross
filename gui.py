@@ -96,7 +96,6 @@ def send_message(event=None):
         # Start a new thread to process the image
         threading.Thread(target=update_user_response, args=(user_input,)).start()
 
-
         # Start a new thread to process the image
         threading.Thread(target=process_message, args=(user_input,)).start()
 

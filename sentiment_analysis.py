@@ -1,5 +1,7 @@
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from collections import deque
+import nltk
+nltk.downloader.download('vader_lexicon')
 
 # VADER Sentiment Analysis
 sia = SentimentIntensityAnalyzer()
@@ -25,6 +27,7 @@ def get_sentiment(text):
 def get_weighted_sentiment(text):
     global sentiment_history
     sentiment = get_sentiment(text)
+    print ("Sentiment", sentiment)
     # Append the new sentiment score (automatically removes oldest if more than 3)
     sentiment_history.append(sentiment)
     # Calculate weighted sentiment
