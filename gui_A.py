@@ -36,16 +36,20 @@ def process_message(user_input):
     response = generate_response(summ2, user_input)
     # Remove it after response has been generated
     chat_left.delete("end-2l", "end-1l")
+    chat_left.see('end')
+    chat_right.see('end')
+
     chat_left.insert('end', "Bot Ross: " + response + "\n", "default")
     chat_right.insert('end', "Bot Ross: " + response + "\n", "hidden")
+
+    # Scroll to end of chat
+    chat_left.see('end') 
+    chat_right.see('end')
 
     summ = summarise_context(summ + user_input)
 
     set_summary(summ)
 
-    # Scroll to end of chat
-    chat_left.see('end') 
-    chat_right.see('end')
 
 # Function to process the image (get description and critique)
 def process_image(file_path):

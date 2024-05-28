@@ -1,5 +1,7 @@
 import os
 import imgbbpy
+import sentiment_analysis
+
 from openai import OpenAI
 
 
@@ -100,8 +102,30 @@ def get_more_info(summary, question):
 
     limit = str(len(question) * 20)
 
-    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Keep your response concise. Your reply must be at most " + limit + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
+   # Sentiment analysis. Gets the user sentiment weighted against the three most recent sentiment scores.
+    user_sentiment = sentiment_analysis.get_sentiment(question)
+    print("User sentiment", user_sentiment)
+    neg = str(user_sentiment["neg"])
+    neu = str(user_sentiment["neu"])
+    pos = str(user_sentiment["pos"])
 
+    question = (
+        "With respect to the following context: " 
+        + summary
+        + ". Answer this in only one paragraph " 
+        + question
+        + ". Along with answering the question, consider the current sentiment of my text input in your response; my text input has a negative sentiment of "
+        + neg
+        + ", a neutral sentiment of "
+        + neu
+        + " and a positive sentiment of "
+        + pos
+        + ". Based on this mix of scores, interpret my mood and respond in a way to cheer me up if you feel my overall mood is generally negative."
+        + " Keep your response concise. Your reply must be at most "
+        + limit
+        + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
+    )
+    
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
