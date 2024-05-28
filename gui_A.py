@@ -7,21 +7,41 @@ from tkinter import filedialog, scrolledtext, messagebox
 import customtkinter as ctk
 from PIL import Image, ImageTk
 
-from openAI_funcs import get_description, get_critique, get_more_info, upload_image_async
+from no_bob_openAI_funcs import make_art, summarise_context, get_description, get_critique, get_more_info, upload_image_async
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
+summary = "you're talking to a art student who is going to ask you to critique some art they will upload, respond to any messages the user sent and ask them to describe their piece"
+feedback = ""
 
+def get_summary():
+    global summary
+    return summary
+
+def set_summary(s):
+    global summary
+    summary = s
+    print(s)
+    return
 
 # Function to process the message (get gpt response)
 def process_message(user_input):
     # Insert temporary "Typing" to let user know that Bot Ross is coming up with an response
     chat_left.insert('end', "Typing...\n")
-    response = generate_response(user_input)
+
+    summ = get_summary()
+
+    summ2 = feedback + summ
+    
+    response = generate_response(summ2, user_input)
     # Remove it after response has been generated
     chat_left.delete("end-2l", "end-1l")
     chat_left.insert('end', "Bot Ross: " + response + "\n", "default")
     chat_right.insert('end', "Bot Ross: " + response + "\n", "hidden")
+
+    summ = summarise_context(summ + user_input)
+
+    set_summary(summ)
 
     # Scroll to end of chat
     chat_left.see('end') 
@@ -30,11 +50,9 @@ def process_message(user_input):
 # Function to process the image (get description and critique)
 def process_image(file_path):
     async def generate_initial_description_critique():
-        # Display loading messages while generating description and critique
-        chat_left.insert('end', "Bot Ross: Processing the image...\n", "default")
+        chat_left.insert('end', "Bot Ross: " + "While I have a look at your masterpiece, tell me, how has your day been?" + "\n", "default")
+        chat_right.insert('end', "Bot Ross: " + "While I have a look at your masterpiece, tell me, how has your day been?" + "\n", "hidden")
         chat_left.see('end')
-        # Padding on the other chatbox but hidden to align the next message
-        chat_right.insert('end', "Bot Ross: Processing the image...\n", "hidden")
         chat_right.see('end')
 
         # Upload the image and get the URL
@@ -47,14 +65,17 @@ def process_image(file_path):
         completed_description = ("Bot Ross: Here is the description of the uploaded image:\n" + description + "\n")
         completed_critique = ("Bot Ross: Here is the critique of the uploaded image:\n" + critique + "\n")
 
-        chat_left.insert('end', completed_description, "default")
-        chat_left.insert('end', completed_critique, "default")  
-        chat_right.insert('end', completed_description, "hidden")
-        chat_right.insert('end', completed_critique, "hidden")
+        #chat_left.insert('end', completed_description, "default")
+        #chat_left.insert('end', completed_critique, "default")  
+        #chat_right.insert('end', completed_description, "hidden")
+        #chat_right.insert('end', completed_critique, "hidden")
 
         chat_left.see('end')
         chat_right.see('end')
 
+        global feedback
+        feedback = completed_description + completed_critique
+        
     asyncio.run(generate_initial_description_critique())
 
 
@@ -80,11 +101,11 @@ def send_message(event=None):
 
 
 # Function to generate response
-def generate_response(user_input):
+def generate_response(s, user_input):
     global image_uploaded
     if image_uploaded:
         # If an image is uploaded, use get_more_info function to generate response
-        response = get_more_info(user_input)
+        response = get_more_info(s, user_input)
     else:
         # If no image is uploaded, provide a simple default response
         response = "Hi, please upload an image to start!"
@@ -203,6 +224,7 @@ root.grid_columnconfigure(1, weight=5)
 root.grid_columnconfigure(2, weight=5)
 root.grid_columnconfigure(3, weight=1)
 root.grid_rowconfigure(0, weight=10)
+
 
 # Start the GUI main loop
 root.mainloop()

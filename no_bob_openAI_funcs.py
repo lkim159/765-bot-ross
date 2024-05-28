@@ -45,7 +45,7 @@ async def get_description(image_url):
                 "role": "user",
                 "content": [
                     {"type": "text",
-                     "text": "Please describe the art in the provided image in as much detail as possible. Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Break down the elements into these sections: emotion, style, skill-level, technique, medium, possible influences, color, form, line, shape, space, texture, scale, proportion, unity, variety, rhythm, mass, shape, space, balance, volume, perspective, depth"},
+                     "text": "Please describe the art in the provided image in as much detail as possible. Break down the elements into these sections: emotion, style, skill-level, technique, medium, possible influences, color, form, line, shape, space, texture, scale, proportion, unity, variety, rhythm, mass, shape, space, balance, volume, perspective, depth"},
                     {
                         "type": "image_url",
                         "image_url": {
@@ -76,7 +76,7 @@ async def get_critique(image_url):
                 "role": "user",
                 "content": [
                     {"type": "text",
-                     "text": "Please critique the art in the image provided. Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Format your response into these sections: praise, critcism, constructive feedback, suggested improvements to the whole work, suggested changes to technique, suggested works or artists to be inspired by, reccomended online tutorials, suggested practise exercises, an appropriate challenge for someone of that skill level in art"},
+                     "text": "Please critique the art in the image provided. Format your response into these sections: praise, critcism, constructive feedback, suggested improvements to the whole work, suggested changes to technique, suggested works or artists to be inspired by, reccomended online tutorials, suggested practise exercises, an appropriate challenge for someone of that skill level in art"},
                     {
                         "type": "image_url",
                         "image_url": {
@@ -100,7 +100,7 @@ def get_more_info(summary, question):
 
     limit = str(len(question) * 20)
 
-    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Keep your response concise, write it like how Artist Bob Ross might speak, using his figures of speech and tone. Do not mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
+    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Keep your response concise. Your reply must be at most " + limit + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
 
     response = client.chat.completions.create(
         model="gpt-4-turbo",
