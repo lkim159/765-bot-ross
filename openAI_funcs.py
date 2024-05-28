@@ -98,9 +98,9 @@ async def get_critique(image_url):
 def get_more_info(summary, question):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
 
-    limit = str(len(question) * 20)
+    limit = str(len(question) * 17)
 
-    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a question for me, the user"
+    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Keep your response concise, write it like how Artist Bob Ross might speak, using his figures of speech and tone. Do not mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
 
     response = client.chat.completions.create(
         model="gpt-4-turbo",
@@ -150,7 +150,7 @@ def make_art(description):
 
     response = client.images.generate(
         model="dall-e-3",
-        prompt="Make a drawing based on the description of the following prompt in the style of Artist Bob Ross:" + description,
+        prompt="Make a drawing based the following prompt in the style of  Bob Ross:" + description,
         size="1024x1024",
         quality="standard",
         n=1,

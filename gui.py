@@ -7,7 +7,7 @@ from tkinter import filedialog, scrolledtext, messagebox
 import customtkinter as ctk
 from PIL import Image, ImageTk
 
-from openAI_funcs import summarise_context, get_description, get_critique, get_more_info, upload_image_async
+from openAI_funcs import make_art, summarise_context, get_description, get_critique, get_more_info, upload_image_async
 
 # Variable to keep track of whether an image has been uploaded
 image_uploaded = False
@@ -31,9 +31,9 @@ def process_message(user_input):
 
     summ = get_summary()
 
-    summ = feedback + summ
+    summ2 = feedback + summ
     
-    response = generate_response(summ, user_input)
+    response = generate_response(summ2, user_input)
     # Remove it after response has been generated
     chat_left.delete("end-2l", "end-1l")
     chat_left.insert('end', "Bot Ross: " + response + "\n", "default")
@@ -74,7 +74,7 @@ def process_image(file_path):
         chat_right.see('end')
 
         global feedback
-        feedback = feedback + completed_description + completed_critique
+        feedback = completed_description + completed_critique
         
     asyncio.run(generate_initial_description_critique())
 
