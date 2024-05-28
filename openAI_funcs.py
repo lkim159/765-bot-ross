@@ -10,6 +10,26 @@ async def upload_image_async(image_path):
     await img_client.close()
     return image_u.url
 
+def summarise_context(context):
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
+    question = "Summarise the text provided here, prioritising verbs and nouns as key words, don't worry about forming grammatically correct sentences:" + context
+
+    response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                ],
+            }
+        ],
+        max_tokens=1000,
+    )
+
+    des = response.choices[0].message.content
+    return des
+
 
 # Async so remember to call it using "await"
 # It is async because the image needs to be uploaded
@@ -75,12 +95,12 @@ async def get_critique(image_url):
 
 # Useful helper function to basically google things the bot doesn't know!
 
-def get_more_info(question):
+def get_more_info(summary, question):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
 
     limit = str(len(question) * 20)
 
-    question = question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a question for me, the user"
+    question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Inject into your response a bit of the way Artist Bob Ross might speak, use variations on his figures of speech and tone, but not too much! Don't mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a question for me, the user"
 
     response = client.chat.completions.create(
         model="gpt-4-turbo",
