@@ -149,8 +149,6 @@ def on_scroll(*args):
     chat_left.yview(*args)
     chat_right.yview(*args)
 
-bob_version()
-
 # Create main window
 root = ctk.CTk()
 root.geometry("1024x768")
