@@ -143,7 +143,8 @@ def get_more_info(question, summarised_history):
     )
     # Add context
     if (summarised_history != ""):
-        question += "I have also provided a summary of the previous responses from the user:" + summarised_history + "\nYou could perhaps use it as context to motivate and cheer me up if my overall mood is generally negative. End your response with a question for me, the user"
+        question += "I have also provided a summary of the previous responses from the user:" + summarised_history + "\nYou could perhaps use it as context and reference something from the previous conversations to motivate and cheer me up if my overall mood is generally negative. "
+    question +=  "End your response with a question for me, the user"
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[
