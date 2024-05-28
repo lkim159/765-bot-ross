@@ -98,7 +98,7 @@ async def get_critique(image_url):
 def get_more_info(summary, question):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
 
-    limit = str(len(question) * 17)
+    limit = str(len(question) * 20)
 
     question = "With respect to the following context: " + summary + ". Answer this in only one paragraph " + question + " Keep your response concise, write it like how Artist Bob Ross might speak, using his figures of speech and tone. Do not mention you are doing a Bob Ross impression! Your reply must be at most " + limit + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
 
