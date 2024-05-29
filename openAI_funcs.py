@@ -1,8 +1,10 @@
 import os
+
 import imgbbpy
+from openai import OpenAI
+
 import sentiment_analysis
 
-from openai import OpenAI
 
 # Function to upload image using asynchronous client
 async def upload_image_async(image_path):
@@ -10,6 +12,7 @@ async def upload_image_async(image_path):
     image_u = await img_client.upload(file=image_path)
     await img_client.close()
     return image_u.url
+
 
 def summarise_context(context):
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
@@ -102,6 +105,7 @@ async def get_critique(image_url):
     des = response.choices[0].message.content
     return des
 
+
 '''
 # Summarise the user's responses to be used as context for encouraging the user
 def summarise_responses(summarised_responses, responses):
@@ -113,7 +117,7 @@ def summarise_responses(summarised_responses, responses):
     as context for my responses to the user where if I wanted to encourage the user, I would want to be able to use this summary of
     what the user has talked about to cheer the user up.
     """
-       
+
     client = OpenAI(
         api_key=os.environ.get("OPENAI_API_KEY"),
     )
@@ -137,8 +141,8 @@ def summarise_responses(summarised_responses, responses):
 
 # Useful helper function to basically google things the bot doesn't know!
 
-def get_more_info(summary, question):
-    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), )
+def get_more_info(summary, question, image_url):
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     limit = str(len(question) * 20)
 
@@ -150,20 +154,20 @@ def get_more_info(summary, question):
     pos = str(user_sentiment["pos"])
 
     question = (
-        "With respect to the following context: " 
-        + summary
-        + ". Answer this in only one paragraph " 
-        + question
-        + ". Along with answering the question, consider the current sentiment of my text input in your response; my text input has a negative sentiment of "
-        + neg
-        + ", a neutral sentiment of "
-        + neu
-        + " and a positive sentiment of "
-        + pos
-        + ". Based on this mix of scores, interpret my mood and respond in a way to cheer me up if you feel my overall mood is generally negative."
-        + " Keep your response concise, write it like how Artist Bob Ross might speak, using his figures of speech and tone. Do not mention you are doing a Bob Ross impression! Your reply must be at most "
-        + limit
-        + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
+            "With respect to the following context: "
+            + summary
+            + ". Answer this in only one paragraph "
+            + question
+            + ". Along with answering the question, consider the current sentiment of my text input in your response; my text input has a negative sentiment of "
+            + neg
+            + ", a neutral sentiment of "
+            + neu
+            + " and a positive sentiment of "
+            + pos
+            + ". Based on this mix of scores, interpret my mood and respond in a way to cheer me up if you feel my overall mood is generally negative."
+            + " Keep your response concise, write it like how Artist Bob Ross might speak, using his figures of speech and tone. Do not mention you are doing a Bob Ross impression! Your reply must be at most "
+            + limit
+            + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
     )
     '''
     # Sentiment analysis. Gets the user sentiment weighted against the three most recent sentiment scores.
@@ -195,9 +199,16 @@ def get_more_info(summary, question):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": question},
+                    {"type": "text",
+                     "text": question},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_url,
+                        },
+                    },
                 ],
-            }
+            },
         ],
         max_tokens=1000,
     )
@@ -217,8 +228,8 @@ def bob_rossify(response):
     )
 
     question = (
-        "Rephase the following text to sound like Bob Ross without altering its word count by more than 1.5 times:"
-        + response
+            "Rephase the following text to sound like Bob Ross without altering its word count by more than 1.5 times:"
+            + response
     )
 
     response = client.chat.completions.create(
@@ -256,4 +267,3 @@ def make_art(description):
 
     des = response.data[0].url
     return des
-
