@@ -79,9 +79,22 @@ def process_image(file_path):
 
         global feedback
         feedback = completed_description + completed_critique
+
+        # Update and show the button since feedback is completed
+        feedback_button.configure(text="View your feedback!", command=show_feedback)
+        feedback_button.grid()
         
     asyncio.run(generate_initial_description_critique())
 
+# Show feedback in chat when button is clicked
+def show_feedback():
+    global feedback
+    chat_left.insert('end', feedback, "default")
+    chat_right.insert('end', feedback, "hidden")
+    chat_left.see('end')
+    chat_right.see('end')
+    # Remove button after feedback has been added
+    feedback_button.grid_remove()
 
 # Function to handle user input and generate response
 def send_message(event=None):
@@ -162,6 +175,12 @@ ctk.set_appearance_mode("dark")
 # Create image display label
 image_label = ctk.CTkLabel(root, text="No Image Uploaded\nPlease Upload an Image to Start")
 image_label.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+
+# Create feedback button (initially hidden)
+feedback_button = ctk.CTkButton(root, text="", command=None)
+feedback_button.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="n")
+# Hide the button until feedback is created
+feedback_button.grid_remove()
 
 # Create chat history display
 opener = "Welcome! My name is Bot Ross and I'm here to help with your art. How are you feeling today?"

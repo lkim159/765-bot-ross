@@ -125,7 +125,7 @@ def get_more_info(summary, question):
         + limit
         + " characters long! End your response with a new question for the user based on the context you were provided and their question, presented on a new line"
     )
-    
+
     response = client.chat.completions.create(
         model="gpt-4-turbo",
         messages=[

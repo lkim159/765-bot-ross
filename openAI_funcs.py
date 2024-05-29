@@ -203,6 +203,8 @@ def get_more_info(summary, question):
     )
 
     des = response.choices[0].message.content
+    ross_sentiment = sentiment_analysis.get_sentiment(des)
+    print("Bot Ross sentiment", ross_sentiment)
     return des
 
 
